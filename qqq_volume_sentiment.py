@@ -110,9 +110,12 @@ df["Vol_BB_Lower"] = (df["Vol_BB_Mid"] - bb_std * df["Vol_BB_Std"]).clip(lower=0
 # Z-score for extreme detection
 df["Vol_Z"] = (df["Vol_Display"] - df["Vol_BB_Mid"]) / df["Vol_BB_Std"]
 
-# Trim warmup
+# Trim warmup — match the timezone of yfinance's index (usually UTC)
 trim_date = end_date - timedelta(days=lookback_months * 30)
-df = df.loc[df.index >= pd.Timestamp(trim_date)]
+trim_ts = pd.Timestamp(trim_date)
+if df.index.tz is not None:
+    trim_ts = trim_ts.tz_localize(df.index.tz)
+df = df.loc[df.index >= trim_ts]
 
 # ── Identify Extremes ────────────────────────────────────────────────────────
 df["Is_High"] = df["Vol_Z"] >= extreme_high_z
